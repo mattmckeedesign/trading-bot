@@ -36,14 +36,13 @@ from alpaca.data.timeframe import TimeFrame
 # CONFIGURATION — edit these before running
 # ─────────────────────────────────────────────
 
-API_KEY    = "PKFGGGIHKC2J52W544GVVHUWD5"       # Paste your Alpaca API key here
-SECRET_KEY = "AQjTkPSqDfUj6KWppsizy9dxkRcF4TW2DradyAVSMwgM"    # Paste your Alpaca secret key here
+API_KEY    = "YOUR_ALPACA_API_KEY"       # Paste your Alpaca API key here
+SECRET_KEY = "YOUR_ALPACA_SECRET_KEY"    # Paste your Alpaca secret key here
 
 PAPER = True                             # True = paper trading (safe), False = live real money
 
 WATCHLIST             = ["SPY", "QQQ"]  # Stocks to monitor
 RISK_PER_TRADE_PCT    = 0.02            # Risk 2% of account per trade
-SIMULATED_ACCOUNT_SIZE = 1000
 MAX_ACCOUNT_LOSS_PCT  = 0.15            # Circuit breaker: stop if account drops 15%
 VIX_PAUSE_LEVEL       = 30             # Pause new trades if VIX >= 30
 VIX_STOP_LEVEL        = 40             # Stop all trades if VIX >= 40
@@ -78,7 +77,7 @@ data_client  = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 def get_vix() -> float:
     """Fetch current VIX (market fear index) from Yahoo Finance. Free, no key needed."""
     try:
-        url = "https://query2.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
+        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
         r = requests.get(url, timeout=10)
         data = r.json()
         vix = data["chart"]["result"][0]["meta"]["regularMarketPrice"]
@@ -139,13 +138,13 @@ def get_daily_bars(symbol: str, days: int = 120) -> pd.DataFrame:
     """Fetch daily OHLCV price bars for a symbol."""
     end   = datetime.now()
     start = end - timedelta(days=days)
-   req = StockBarsRequest(
-    symbol_or_symbols=symbol,
-    timeframe=TimeFrame.Day,
-    start=start,
-    end=end,
-    feed="iex",
-)
+    req = StockBarsRequest(
+        symbol_or_symbols=symbol,
+        timeframe=TimeFrame.Day,
+        start=start,
+        end=end,
+        feed="iex",
+    )
     bars = data_client.get_stock_bars(req).df
     if isinstance(bars.index, pd.MultiIndex):
         bars = bars.xs(symbol, level="symbol")
@@ -200,7 +199,7 @@ def calculate_position(account_equity: float, entry: float, stop: float) -> dict
     if risk_per_share <= 0:
         return {}
 
-    max_risk_dollars = SIMULATED_ACCOUNT_SIZE * RISK_PER_TRADE_PCT
+    max_risk_dollars = account_equity * RISK_PER_TRADE_PCT
     shares           = int(max_risk_dollars / risk_per_share)
 
     if shares < 1:
