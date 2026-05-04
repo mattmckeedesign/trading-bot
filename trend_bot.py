@@ -78,7 +78,7 @@ data_client  = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 def get_vix() -> float:
     """Fetch current VIX (market fear index) from Yahoo Finance. Free, no key needed."""
     try:
-        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
+        url = "https://query2.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
         r = requests.get(url, timeout=10)
         data = r.json()
         vix = data["chart"]["result"][0]["meta"]["regularMarketPrice"]
@@ -139,12 +139,13 @@ def get_daily_bars(symbol: str, days: int = 120) -> pd.DataFrame:
     """Fetch daily OHLCV price bars for a symbol."""
     end   = datetime.now()
     start = end - timedelta(days=days)
-    req = StockBarsRequest(
-        symbol_or_symbols=symbol,
-        timeframe=TimeFrame.Day,
-        start=start,
-        end=end,
-    )
+   req = StockBarsRequest(
+    symbol_or_symbols=symbol,
+    timeframe=TimeFrame.Day,
+    start=start,
+    end=end,
+    feed="iex",
+)
     bars = data_client.get_stock_bars(req).df
     if isinstance(bars.index, pd.MultiIndex):
         bars = bars.xs(symbol, level="symbol")
