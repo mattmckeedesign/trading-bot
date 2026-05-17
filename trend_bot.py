@@ -293,7 +293,7 @@ def run_scan():
     log.info(f"Mode: {'PAPER TRADING' if PAPER else '⚠️  LIVE TRADING'}")
 
     # 1. VIX check — black swan filter
-    vix = 15  # VIX hardcoded as safe while external fetch is disabled
+    vix = get_vix()
     if not vix_allows_trading(vix):
         return
 
