@@ -76,14 +76,14 @@ data_client  = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 # ─────────────────────────────────────────────
 
 def get_vix() -> float:
-    """Fetch current VIX (market fear index) from Yahoo Finance. Free, no key needed."""
+    """Fetch current VIX using Alpha Vantage. Free API key required."""
     try:
-        url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
+        url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIX&apikey=W9RFSHSRVPCYHO1Q"
         r = requests.get(url, timeout=10)
         data = r.json()
-        vix = data["chart"]["result"][0]["meta"]["regularMarketPrice"]
+        vix = float(data["Global Quote"]["05. price"])
         log.info(f"VIX: {vix}")
-        return float(vix)
+        return vix
     except Exception as e:
         log.warning(f"Could not fetch VIX: {e}. Defaulting to 0 (no block).")
         return 0.0
