@@ -78,7 +78,8 @@ data_client  = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 def get_vix() -> float:
     """Fetch current VIX using Alpha Vantage. Free API key required."""
     try:
-        url = "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIX&apikey=W9RFSHSRVPCYHO1Q"
+        av_key = os.environ.get("ALPHA_VANTAGE_KEY", "")
+        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIX&apikey={av_key}"
         r = requests.get(url, timeout=10)
         data = r.json()
         vix = float(data["Global Quote"]["05. price"])
