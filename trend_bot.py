@@ -45,8 +45,8 @@ PAPER = True                             # True = paper trading (safe), False = 
 WATCHLIST             = ["SPY", "QQQ"]  # Stocks to monitor
 RISK_PER_TRADE_PCT    = 0.02            # Risk 2% of account per trade
 MAX_ACCOUNT_LOSS_PCT  = 0.15            # Circuit breaker: stop if account drops 15%
-VIX_PAUSE_LEVEL       = 30             # Pause new trades if VIX >= 30
-VIX_STOP_LEVEL        = 40             # Stop all trades if VIX >= 40
+VIX_PAUSE_LEVEL       = 40             # Pause new trades if VIX >= 30
+VIX_STOP_LEVEL        = 55             # Stop all trades if VIX >= 40
 REWARD_RISK_RATIO     = 3.0            # Target = 3x your risk (3R)
 MA_PERIOD             = 50             # 50-day moving average
 
@@ -79,7 +79,7 @@ def get_vix() -> float:
     """Fetch current VIX using Alpha Vantage. Free API key required."""
     try:
         av_key = os.environ.get("ALPHA_VANTAGE_KEY", "")
-        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIX&apikey={av_key}"
+        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIXY&apikey={av_key}"
         r = requests.get(url, timeout=10)
         data = r.json()
         vix = float(data["Global Quote"]["05. price"])
