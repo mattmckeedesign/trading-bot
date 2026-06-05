@@ -42,7 +42,7 @@ SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY", "YOUR_ALPACA_SECRET_KEY")
 
 PAPER = False                             # True = paper trading (safe), False = live real money
 
-WATCHLIST             = ["SPY", "QQQ"]  # Stocks to monitor
+WATCHLIST             = ["SPLG", "QQQM"]  # Stocks to monitor
 RISK_PER_TRADE_PCT    = 0.02            # Risk 2% of account per trade
 MAX_ACCOUNT_LOSS_PCT  = 0.15            # Circuit breaker: stop if account drops 15%
 VIX_PAUSE_LEVEL       = 40             # Pause new trades if VIX >= 30
