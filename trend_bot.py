@@ -136,7 +136,7 @@ def circuit_breaker_triggered(account: dict) -> bool:
 # MARKET DATA
 # ─────────────────────────────────────────────
 
-def get_daily_bars(symbol: str, days: int = 120) -> pd.DataFrame:
+def get_daily_bars(symbol: str, days: int = 200) -> pd.DataFrame:
     """Fetch daily OHLCV price bars for a symbol. Uses IEX feed."""
     end   = datetime.now()
     start = end - timedelta(days=days)
