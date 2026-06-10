@@ -136,8 +136,33 @@ def circuit_breaker_triggered(account: dict) -> bool:
 # MARKET DATA
 # ─────────────────────────────────────────────
 
+def get_daily_bars_av(symbol: str) -> pd.DataFrame:
+    """Fetch daily bars from Alpha Vantage for symbols with limited IEX history."""
+    av_key = os.environ.get("ALPHA_VANTAGE_KEY", "")
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize=full&apikey={av_key}"
+    r = requests.get(url, timeout=15)
+    data = r.json()
+    ts = data.get("Time Series (Daily)", {})
+    if not ts:
+        raise ValueError(f"No Alpha Vantage data for {symbol}")
+    rows = []
+    for date, vals in ts.items():
+        rows.append({
+            "timestamp": pd.Timestamp(date),
+            "open":   float(vals["1. open"]),
+            "high":   float(vals["2. high"]),
+            "low":    float(vals["3. low"]),
+            "close":  float(vals["4. close"]),
+            "volume": float(vals["5. volume"]),
+        })
+    df = pd.DataFrame(rows).set_index("timestamp").sort_index()
+    return df
+
+
 def get_daily_bars(symbol: str, days: int = 200) -> pd.DataFrame:
-    """Fetch daily OHLCV price bars for a symbol. Uses IEX feed."""
+    """Fetch daily OHLCV price bars. Uses Alpha Vantage for SPLG, IEX for others."""
+    if symbol == "SPLG":
+        return get_daily_bars_av(symbol)
     end   = datetime.now()
     start = end - timedelta(days=days)
     req = StockBarsRequest(
@@ -152,6 +177,7 @@ def get_daily_bars(symbol: str, days: int = 200) -> pd.DataFrame:
         bars = bars.xs(symbol, level="symbol")
     bars = bars.sort_index()
     return bars
+
 
 # ─────────────────────────────────────────────
 # TREND DETECTION — the core strategy logic
