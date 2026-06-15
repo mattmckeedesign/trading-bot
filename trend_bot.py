@@ -139,7 +139,7 @@ def circuit_breaker_triggered(account: dict) -> bool:
 def get_daily_bars_av(symbol: str) -> pd.DataFrame:
     """Fetch daily bars from Alpha Vantage for symbols with limited IEX history."""
     av_key = "AHI6KLXA0RIYHANK"
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize=full&apikey={av_key}"
+    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize=compact&apikey={av_key}"
     r = requests.get(url, timeout=15)
     data = r.json()
     ts = data.get("Time Series (Daily)", {})
