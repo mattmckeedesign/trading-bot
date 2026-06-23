@@ -42,7 +42,7 @@ SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY", "YOUR_ALPACA_SECRET_KEY")
 
 PAPER = False                             # True = paper trading (safe), False = live real money
 
-WATCHLIST             = ["SPLG", "QQQM"]  # Stocks to monitor
+WATCHLIST             = ["SCHB", "QQQM"]  # Stocks to monitor
 RISK_PER_TRADE_PCT    = 0.02            # Risk 2% of account per trade
 MAX_ACCOUNT_LOSS_PCT  = 0.15            # Circuit breaker: stop if account drops 15%
 VIX_PAUSE_LEVEL       = 40             # Pause new trades if VIX >= 30
@@ -183,7 +183,7 @@ def get_daily_bars_av(symbol: str) -> pd.DataFrame:
 
 def get_daily_bars(symbol: str, days: int = 200) -> pd.DataFrame:
     """Fetch daily OHLCV price bars. Uses Alpha Vantage for SPLG, IEX for others."""
-    if symbol == "SPLG":
+    if symbol in ["SPLG", "SCHB"]:
         return get_daily_bars_td(symbol)
     end   = datetime.now()
     start = end - timedelta(days=days)
