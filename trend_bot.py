@@ -42,7 +42,7 @@ SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY", "YOUR_ALPACA_SECRET_KEY")
 
 PAPER = False                             # True = paper trading (safe), False = live real money
 
-WATCHLIST             = ["QQQM"]  # Stocks to monitor
+WATCHLIST             = ["SPLG", "QQQM"]  # Stocks to monitor
 RISK_PER_TRADE_PCT    = 0.02            # Risk 2% of account per trade
 MAX_ACCOUNT_LOSS_PCT  = 0.15            # Circuit breaker: stop if account drops 15%
 VIX_PAUSE_LEVEL       = 40             # Pause new trades if VIX >= 30
@@ -136,6 +136,28 @@ def circuit_breaker_triggered(account: dict) -> bool:
 # MARKET DATA
 # ─────────────────────────────────────────────
 
+
+def get_daily_bars_td(symbol: str) -> pd.DataFrame:
+    """Fetch daily bars from Twelve Data — 800 free calls/day, no rate limit issues."""
+    td_key = os.environ.get("TWELVE_DATA_KEY", "")
+    url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval=1day&outputsize=200&apikey={td_key}"
+    r = requests.get(url, timeout=15)
+    data = r.json()
+    if "values" not in data:
+        raise ValueError(f"No Twelve Data data for {symbol}: {data.get('message', 'unknown error')}")
+    rows = []
+    for bar in data["values"]:
+        rows.append({
+            "timestamp": pd.Timestamp(bar["datetime"]),
+            "open":   float(bar["open"]),
+            "high":   float(bar["high"]),
+            "low":    float(bar["low"]),
+            "close":  float(bar["close"]),
+            "volume": float(bar.get("volume", 0)),
+        })
+    df = pd.DataFrame(rows).set_index("timestamp").sort_index()
+    return df
+
 def get_daily_bars_av(symbol: str) -> pd.DataFrame:
     """Fetch daily bars from Alpha Vantage for symbols with limited IEX history."""
     av_key = "AHI6KLXA0RIYHANK"
@@ -162,7 +184,7 @@ def get_daily_bars_av(symbol: str) -> pd.DataFrame:
 def get_daily_bars(symbol: str, days: int = 200) -> pd.DataFrame:
     """Fetch daily OHLCV price bars. Uses Alpha Vantage for SPLG, IEX for others."""
     if symbol == "SPLG":
-        return get_daily_bars_av(symbol)
+        return get_daily_bars_td(symbol)
     end   = datetime.now()
     start = end - timedelta(days=days)
     req = StockBarsRequest(
