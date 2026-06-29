@@ -76,18 +76,19 @@ data_client  = StockHistoricalDataClient(API_KEY, SECRET_KEY)
 # ─────────────────────────────────────────────
 
 def get_vix() -> float:
-    """Fetch current VIX using Alpha Vantage. Free API key required."""
+    """Fetch current VIX from Twelve Data — 800 free calls/day, reliable."""
     try:
-        av_key = os.environ.get("ALPHA_VANTAGE_KEY", "")
-        url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=VIXY&apikey={av_key}"
+        td_key = os.environ.get("TWELVE_DATA_KEY", "")
+        url = f"https://api.twelvedata.com/price?symbol=VIX&apikey={td_key}"
         r = requests.get(url, timeout=10)
         data = r.json()
-        vix = float(data["Global Quote"]["05. price"])
+        vix = float(data["price"])
         log.info(f"VIX: {vix}")
         return vix
     except Exception as e:
         log.warning(f"Could not fetch VIX: {e}. Defaulting to 0 (no block).")
         return 0.0
+
 
 
 def vix_allows_trading(vix: float) -> bool:
