@@ -79,7 +79,7 @@ def get_vix() -> float:
     """Fetch current VIX from Twelve Data — 800 free calls/day, reliable."""
     try:
         td_key = os.environ.get("TWELVE_DATA_KEY", "")
-        url = f"https://api.twelvedata.com/price?symbol=VIX&apikey={td_key}"
+        url = f"https://api.twelvedata.com/price?symbol=VIXY&apikey={td_key}"
         r = requests.get(url, timeout=10)
         data = r.json()
         vix = float(data["price"])
@@ -241,10 +241,11 @@ def is_below_ma(bars: pd.DataFrame) -> bool:
 # POSITION SIZING — always 2% risk max
 # ─────────────────────────────────────────────
 
-def calculate_position(account_equity: float, entry: float, stop: float) -> dict:
+def calculate_position(account_equity: float, entry: float, stop: float, available_cash: float = None) -> dict:
     """
     Calculate number of shares based on 2% account risk rule.
     Stop is placed just below the 50-day MA.
+    Also caps position size by available cash to avoid insufficient buying power errors.
     """
     risk_per_share   = entry - stop
     if risk_per_share <= 0:
@@ -252,6 +253,12 @@ def calculate_position(account_equity: float, entry: float, stop: float) -> dict
 
     max_risk_dollars = account_equity * RISK_PER_TRADE_PCT
     shares           = int(max_risk_dollars / risk_per_share)
+
+    if available_cash is not None:
+        max_shares_by_cash = int(available_cash / entry)
+        if max_shares_by_cash < shares:
+            log.info(f"  Capping position size to available cash: {max_shares_by_cash} shares vs {shares} shares")
+            shares = max_shares_by_cash
 
     if shares < 1:
         log.info("  Position too small for current account size. Skipping.")
@@ -386,7 +393,7 @@ def run_scan():
             ma50  = bars["close"].rolling(window=MA_PERIOD).mean().iloc[-1]
             stop  = round(ma50 * 0.99, 2)   # Stop just below the 50-day MA
 
-            pos = calculate_position(account["equity"], entry, stop)
+            pos = calculate_position(account["equity"], entry, stop, available_cash=account["cash"])
             if pos:
                 place_buy_order(symbol, pos)
         else:
