@@ -237,6 +237,18 @@ def is_below_ma(bars: pd.DataFrame) -> bool:
     current_ma    = bars["ma50"].iloc[-1]
     return current_price < current_ma
 
+
+def is_trailing_stop_hit(bars: pd.DataFrame, trail_pct: float = 0.07) -> bool:
+    """Exit signal: price has dropped 7% from its 20-day high peak."""
+    recent_high   = bars["high"].tail(20).max()
+    current_price = bars["close"].iloc[-1]
+    drop_from_peak = (recent_high - current_price) / recent_high
+    if drop_from_peak >= trail_pct:
+        log.info(f"  Trailing stop hit: dropped {drop_from_peak:.1%} from 20-day high of ${recent_high:.2f}")
+        return True
+    log.info(f"  Trailing stop: {drop_from_peak:.1%} drop from 20-day high of ${recent_high:.2f} -- ok")
+    return False
+
 # ─────────────────────────────────────────────
 # POSITION SIZING — always 2% risk max
 # ─────────────────────────────────────────────
@@ -377,11 +389,17 @@ def run_scan():
         if position:
             qty = float(position.qty)
             log.info(f"  Currently holding {qty} shares of {symbol}")
-            if is_below_ma(bars):
-                log.info(f"  Price crossed below 50-day MA — EXIT SIGNAL")
+            ma_exit       = is_below_ma(bars)
+            trailing_exit = is_trailing_stop_hit(bars)
+
+            if ma_exit:
+                log.info(f"  Price crossed below 50-day MA -- EXIT SIGNAL")
+                place_sell_order(symbol, qty)
+            elif trailing_exit:
+                log.info(f"  Trailing stop triggered -- EXIT SIGNAL")
                 place_sell_order(symbol, qty)
             else:
-                log.info(f"  Still in uptrend — holding position")
+                log.info(f"  Still in uptrend -- holding position")
             continue
 
         # ── ENTRY LOGIC ──
