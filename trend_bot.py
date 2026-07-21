@@ -337,6 +337,65 @@ def place_sell_order(symbol: str, qty: float):
         log.error(f"  ❌ Sell order failed for {symbol}: {e}")
         return None
 
+
+
+def get_sgov_position():
+    """Return current SGOV position if held, else None."""
+    try:
+        positions = trade_client.get_all_positions()
+        for p in positions:
+            if p.symbol == "SGOV":
+                return p
+    except Exception:
+        pass
+    return None
+
+
+def buy_sgov(cash: float):
+    """Park idle cash in SGOV to earn ~5% while waiting for stock signals."""
+    if cash < 50:
+        log.info(f"  Not enough cash for SGOV (${cash:.2f}). Skipping.")
+        return
+    shares = int(cash / 100)  # SGOV trades ~$100/share
+    if shares < 1:
+        log.info(f"  Not enough cash for 1 share of SGOV. Skipping.")
+        return
+    try:
+        order = trade_client.submit_order(
+            MarketOrderRequest(
+                symbol="SGOV",
+                qty=shares,
+                side=OrderSide.BUY,
+                time_in_force=TimeInForce.DAY,
+            )
+        )
+        log.info(f"  ✅ SGOV BUY: {shares} shares @ ~$100 = ~${shares * 100} parked earning ~5%")
+        return order
+    except Exception as e:
+        log.error(f"  ❌ SGOV buy failed: {e}")
+
+
+def sell_sgov():
+    """Sell all SGOV to free up cash for stock re-entry."""
+    position = get_sgov_position()
+    if not position:
+        return
+    qty = float(position.qty)
+    try:
+        order = trade_client.submit_order(
+            MarketOrderRequest(
+                symbol="SGOV",
+                qty=qty,
+                side=OrderSide.SELL,
+                time_in_force=TimeInForce.DAY,
+            )
+        )
+        log.info(f"  ✅ SGOV SELL: {qty} shares sold to fund stock re-entry")
+        return order
+    except Exception as e:
+        log.error(f"  ❌ SGOV sell failed: {e}")
+
+
 # ─────────────────────────────────────────────
 # POSITION CHECKER
 # ─────────────────────────────────────────────
@@ -395,9 +454,11 @@ def run_scan():
             if ma_exit:
                 log.info(f"  Price crossed below 50-day MA -- EXIT SIGNAL")
                 place_sell_order(symbol, qty)
+                buy_sgov(account["cash"] + (qty * bars["close"].iloc[-1]))
             elif trailing_exit:
                 log.info(f"  Trailing stop triggered -- EXIT SIGNAL")
                 place_sell_order(symbol, qty)
+                buy_sgov(account["cash"] + (qty * bars["close"].iloc[-1]))
             else:
                 log.info(f"  Still in uptrend -- holding position")
             continue
@@ -405,6 +466,10 @@ def run_scan():
         # ── ENTRY LOGIC ──
         # If we're not in a position, check if we should enter
         if is_in_uptrend(bars):
+            sgov = get_sgov_position()
+            if sgov:
+                log.info(f"  Selling SGOV to fund stock entry...")
+                sell_sgov()
             log.info(f"  Uptrend confirmed — checking entry...")
 
             entry = bars["close"].iloc[-1]
