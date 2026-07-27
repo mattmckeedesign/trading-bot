@@ -482,6 +482,24 @@ def run_scan():
         else:
             log.info(f"  No uptrend detected — no trade.")
 
+
+    # ── SGOV IDLE CASH CHECK ──
+    # If no stock positions held and cash > $100, park in SGOV
+    try:
+        all_positions = trade_client.get_all_positions()
+        stock_positions = [p for p in all_positions if p.symbol in WATCHLIST]
+        sgov_position = get_sgov_position()
+        settled_cash = float(trade_client.get_account().cash)
+        if not stock_positions and not sgov_position and settled_cash > 100:
+            log.info(f"  No stock positions and ${settled_cash:.2f} idle — buying SGOV")
+            buy_sgov(settled_cash)
+        elif sgov_position and stock_positions:
+            log.info(f"  Stock positions active — SGOV not needed")
+        elif sgov_position:
+            log.info(f"  SGOV holding {sgov_position.qty} shares — cash earning ~5%")
+    except Exception as e:
+        log.warning(f"  SGOV idle check failed: {e}")
+
     log.info("\nScan complete. Next scan tomorrow at market open.")
 
 
