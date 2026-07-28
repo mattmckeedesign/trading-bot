@@ -490,7 +490,7 @@ def run_scan():
         stock_positions = [p for p in all_positions if p.symbol in WATCHLIST]
         sgov_position = get_sgov_position()
         settled_cash = float(trade_client.get_account().cash)
-        if not stock_positions and not sgov_position and settled_cash > 100:
+        if not stock_positions and settled_cash > 100:
             log.info(f"  No stock positions and ${settled_cash:.2f} idle — buying SGOV")
             buy_sgov(settled_cash)
         elif sgov_position and stock_positions:
