@@ -19,6 +19,7 @@ Setup:
 """
 
 import time
+import pytz
 import logging
 from datetime import datetime, timedelta
 
@@ -508,9 +509,10 @@ def run_scan():
 # ─────────────────────────────────────────────
 
 def wait_for_market_open():
-    """Wait until 9:35 AM ET on a weekday."""
+    """Wait until 9:35 AM Eastern Time on a weekday."""
+    eastern = pytz.timezone("America/New_York")
     while True:
-        now = datetime.now()
+        now = datetime.now(eastern)
         if now.weekday() < 5 and now.hour == 9 and now.minute == 35:
             return
         time.sleep(60)
