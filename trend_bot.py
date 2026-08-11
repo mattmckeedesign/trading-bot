@@ -462,6 +462,17 @@ def run_scan():
                 buy_sgov(account["cash"] + (qty * bars["close"].iloc[-1]))
             else:
                 log.info(f"  Still in uptrend -- holding position")
+                # Top up position with any extra settled cash
+                settled_cash = float(trade_client.get_account().cash)
+                current_price = bars["close"].iloc[-1]
+                ma50 = bars["close"].rolling(window=MA_PERIOD).mean().iloc[-1]
+                stop_price = round(ma50 * 0.99, 2)
+                if settled_cash >= current_price and current_price > 0:
+                    extra_shares = int(settled_cash / current_price)
+                    if extra_shares >= 1:
+                        log.info(f"  Extra cash ${settled_cash:.2f} detected -- buying {extra_shares} more shares of {symbol}")
+                        top_up_pos = {"entry": round(current_price, 2), "stop": stop_price, "target": round(current_price * 1.06, 2), "shares": extra_shares, "risk_dollars": 0, "reward_dollars": 0}
+                        place_buy_order(symbol, top_up_pos)
             continue
 
         # ── ENTRY LOGIC ──
